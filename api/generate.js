@@ -1,3 +1,5 @@
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
 export default async function handler(req, res) {
   const prompt = req.query.prompt;
 
@@ -6,29 +8,33 @@ export default async function handler(req, res) {
   }
 
   try {
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0:generateImage?key=" + process.env.GEMINI_API_KEY,
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    const result = await model.generateContent([
       {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          prompt: {
-            text: "Realistic food photograph. " + prompt
+        role: "user",
+        parts: [
+          {
+            text:
+              "Imagine a hyper-realistic food photograph in JPEG format. Describe it in detail and embed the image as base64. Dish: " +
+              prompt
           }
-        })
+        ]
       }
-    );
+    ]);
 
-    const raw = await response.text(); // <-- on lit TOUT
+    const parts = result.response.candidates?.[0]?.content?.parts;
 
-    return res.status(200).json({
-      debug: "Google raw response",
-      raw: raw
-    });
+    const base64 = parts?.find(p => p.inlineData)?.inlineData?.data;
 
+    if (!base64) {
+      return res.status(500).json({ error: "No image returned", raw: parts });
+    }
+
+    res.status(200).json({ base64 });
   } catch (err) {
-    return res.status(500).json({
-      error: err.message
-    });
+    res.status(500).json({ error: err.message });
   }
 }
