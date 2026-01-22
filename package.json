@@ -1,5 +1,5 @@
 {
-  "name": "friggy-image-api",
+  "name": "friggyimage-api",
   "version": "1.0.0",
   "type": "module",
   "dependencies": {
