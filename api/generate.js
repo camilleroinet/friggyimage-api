@@ -12,25 +12,18 @@ export default async function handler(req, res) {
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const result = await model.generateContent([
-      {
-        role: "user",
-        parts: [
-          {
-            text:
-              "Imagine a hyper-realistic food photograph in JPEG format. Describe it in detail and embed the image as base64. Dish: " +
-              prompt
-          }
-        ]
-      }
-    ]);
+    const result = await model.generateContent(
+      "Generate a hyper-realistic food photograph in base64. Dish: " + prompt
+    );
 
-    const parts = result.response.candidates?.[0]?.content?.parts;
-
-    const base64 = parts?.find(p => p.inlineData)?.inlineData?.data;
+    const response = await result.response;
+    const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
     if (!base64) {
-      return res.status(500).json({ error: "No image returned", raw: parts });
+      return res.status(500).json({
+        error: "No image returned",
+        raw: response
+      });
     }
 
     res.status(200).json({ base64 });
