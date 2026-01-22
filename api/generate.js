@@ -10,24 +10,28 @@ export default async function handler(req, res) {
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
-    // modèle garanti disponible
-    const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+    // Le modèle d'image AI Studio
+    const model = genAI.getGenerativeModel({
+      model: "imagen-3.0"
+    });
 
-    const result = await model.generateContent(
-      "Generate a hyper-realistic food photograph encoded as base64. Dish: " + prompt
-    );
+    // Appel image
+    const result = await model.generateImage({
+      prompt,
+      size: "1024x1024"
+    });
 
-    const response = await result.response;
-    const base64 = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    // Récupération du base64
+    const image = result.images?.[0]?.base64;
 
-    if (!base64) {
+    if (!image) {
       return res.status(500).json({
         error: "No image returned",
-        raw: response
+        raw: result
       });
     }
 
-    res.status(200).json({ base64 });
+    res.status(200).json({ base64: image });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
